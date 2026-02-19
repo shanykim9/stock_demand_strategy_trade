@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+
+# Python cache/artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local logs
+*.log
+data/logs/
+
+# Local runtime data (generated at run time)
+data/stgdemand_cache/
+data/bsdemand_buy_log.jsonl
+data/bsdemand_buy_plan.json
+data/bsdemand_config.json
+data/stgdemand_auto_history.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
