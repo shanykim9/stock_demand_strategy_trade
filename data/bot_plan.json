@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan-1770601227",
+  "updated_at": "2026-02-10T12:22:22+09:00",
+  "enabled": true,
+  "plan": {
+    "ticker": "455900",
+    "name": "엔젤로보틱스",
+    "exchange": "AUTO",
+    "qty": 1,
+    "buy_price": 34700,
+    "stop_loss": 33500,
+    "take_profit": 38500
+  }
+}

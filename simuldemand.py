@@ -86,7 +86,7 @@ def _clamp_stop_loss_pct(v: int) -> int:
 
 
 def _clamp_trailing_drop_pct(v: int) -> int:
-	return max(3, min(10, int(v)))
+	return max(3, min(30, int(v)))
 
 
 @dataclass
@@ -532,8 +532,8 @@ HTML = """
           <input class="input mono" type="number" name="stop_loss_pct" min="5" max="10" step="1" value="{{ stop_loss_pct }}" />
         </label>
         <label class="field">
-          <span class="label">트레일링 스탑(최고점 대비 하락 %, 3~10)</span>
-          <input class="input mono" type="number" name="trailing_drop_pct" min="3" max="10" step="1" value="{{ trailing_drop_pct }}" />
+          <span class="label">트레일링 스탑(최고점 대비 하락 %, 3~30)</span>
+          <input class="input mono" type="number" name="trailing_drop_pct" min="3" max="30" step="1" value="{{ trailing_drop_pct }}" />
         </label>
         <button class="btn" type="submit">시뮬레이션 실행</button>
         <button class="btn" type="submit" formaction="/simulate-auto">자동분석(9 CASE)</button>

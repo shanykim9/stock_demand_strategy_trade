@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>주봉 분석 005930</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 14px; background:#fafafa; color:#111; }
+    .title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .meta { color:#666; font-size: 12px; margin-bottom: 10px; }
+    #chart { width: 100%; height: 920px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div class="title">주봉 차트 (300주): 005930 (005930)</div>
+  <div class="meta">source=daily_aggregated_weekly / api=ka10081 / pages=18 / raw_rows=10788</div>
+  <div id="chart"></div>
+  <script>
+    const dates = ["2025-10-02", "2025-10-10", "2025-10-17", "2025-10-24", "2025-10-31", "2025-11-07", "2025-11-14", "2025-11-21", "2025-11-28", "2025-12-05", "2025-12-12", "2025-12-19", "2025-12-26", "2026-01-02", "2026-01-09", "2026-01-16", "2026-01-23", "2026-01-30", "2026-02-06", "2026-02-13"];
+    const candles = [[83300, 89000, 83200, 90300], [94000, 94400, 92700, 94500], [91300, 97900, 90200, 99100], [97900, 98800, 95500, 99900], [101300, 107500, 99100, 108600], [106900, 97900, 96300, 112400], [98600, 97200, 97200, 106000], [99800, 94800, 94500, 102900], [97800, 100500, 96200, 105500], [102000, 108400, 99900, 108400], [109700, 108900, 106800, 110500], [105300, 106300, 102700, 109700], [109700, 117000, 109300, 117000], [119400, 128500, 118200, 128500], [134600, 139000, 132700, 144500], [141000, 148900, 136800, 149500], [147200, 152100, 141800, 157000], [154900, 160500, 149200, 166600], [155700, 158600, 150400, 169400], [168600, 181200, 162000, 184400]];
+    const volumes = [101310544, 35269748, 131350523, 93621703, 152466621, 156967139, 113643449, 103334007, 99001482, 70939656, 78769475, 108107073, 91789471, 69885632, 205472025, 121801572, 136006446, 156086280, 181014533, 142978982];
+    const amounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    const chart = echarts.init(document.getElementById("chart"));
+    const option = {
+      animation: false,
+      legend: { top: 6, data: ["주봉", "거래량", "거래대금"] },
+      axisPointer: { link: [{xAxisIndex: [0, 1, 2]}] },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "cross" }
+      },
+      grid: [
+        { left: 70, right: 20, top: 40, height: "52%" },
+        { left: 70, right: 20, top: "64%", height: "14%" },
+        { left: 70, right: 20, top: "82%", height: "14%" }
+      ],
+      xAxis: [
+        { type: "category", data: dates, boundaryGap: true, axisLine: { onZero: false }, min: "dataMin", max: "dataMax" },
+        { type: "category", gridIndex: 1, data: dates, boundaryGap: true, axisLine: { onZero: false }, axisTick: { show: false }, axisLabel: { show: false }, min: "dataMin", max: "dataMax" },
+        { type: "category", gridIndex: 2, data: dates, boundaryGap: true, axisLine: { onZero: false }, axisTick: { show: false }, min: "dataMin", max: "dataMax" }
+      ],
+      yAxis: [
+        { scale: true, splitArea: { show: true } },
+        { scale: true, gridIndex: 1, splitNumber: 2 },
+        { scale: true, gridIndex: 2, splitNumber: 2 }
+      ],
+      dataZoom: [
+        { type: "inside", xAxisIndex: [0,1,2], start: 0, end: 100 },
+        { show: true, xAxisIndex: [0,1,2], type: "slider", bottom: 8, start: 0, end: 100 }
+      ],
+      series: [
+        {
+          name: "주봉",
+          type: "candlestick",
+          data: candles,
+          itemStyle: {
+            color: "#ef4444",
+            color0: "#2563eb",
+            borderColor: "#ef4444",
+            borderColor0: "#2563eb"
+          }
+        },
+        {
+          name: "거래량",
+          type: "bar",
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: volumes,
+          itemStyle: { color: "rgba(99,102,241,0.65)" }
+        },
+        {
+          name: "거래대금",
+          type: "bar",
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: amounts,
+          itemStyle: { color: "rgba(16,185,129,0.65)" }
+        }
+      ]
+    };
+    chart.setOption(option);
+    window.addEventListener("resize", () => chart.resize());
+  </script>
+</body>
+</html>

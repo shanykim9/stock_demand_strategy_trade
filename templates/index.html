@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>외국인/기관 수급 대시보드</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div>
+        <div class="title">외국인/기관 수급 대시보드</div>
+        <div class="subtitle">키움 REST API 기반 · 표 + 주식차트 형태 그래프</div>
+      </div>
+      <div class="hint">
+        서버: <span class="mono" id="serverBase"></span>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="controls">
+        <label class="field">
+          <span class="label">종목코드 / 종목명</span>
+          <input id="ticker" class="input mono" placeholder="예: 005930 또는 삼성전자" />
+        </label>
+        <label class="field">
+          <span class="label">기간(days)</span>
+          <input id="days" class="input mono" type="number" min="1" max="365" step="1" />
+        </label>
+        <button id="btnFetch" class="btn">조회</button>
+        <div class="spacer"></div>
+        <label class="check">
+          <input id="chkForeign" type="checkbox" checked />
+          <span>외국인 표시</span>
+        </label>
+        <label class="check">
+          <input id="chkInstitution" type="checkbox" checked />
+          <span>기관 표시</span>
+        </label>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="cardTitle">요약</div>
+        <div id="summary" class="summary"></div>
+        <div id="note" class="note"></div>
+      </div>
+      <div class="card">
+        <div class="cardTitle">주가(종가 기준)</div>
+        <div class="chart">
+          <canvas id="priceCanvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">수급(일별 수량)</div>
+      <div class="chart">
+        <canvas id="netCanvas"></canvas>
+      </div>
+      <div class="legend">
+        <div class="badge"><span class="dot" style="background: rgba(53,208,127,0.9)"></span>외국인 (+)</div>
+        <div class="badge"><span class="dot" style="background: rgba(255,92,119,0.9)"></span>외국인 (-)</div>
+        <div class="badge"><span class="dot" style="background: rgba(106,169,255,0.9)"></span>기관 (+)</div>
+        <div class="badge"><span class="dot" style="background: rgba(255,204,102,0.95)"></span>기관 (-)</div>
+      </div>
+      <div class="smallHelp">막대(+)는 매수 우위, (-)는 매도 우위로 표시합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">수급그래프(누적 · 90일 기준)</div>
+      <div class="chart">
+        <canvas id="cumCanvas"></canvas>
+      </div>
+      <div class="legend">
+        <div class="badge"><span class="dot" style="background: rgba(53,208,127,0.95)"></span>외국인 누적</div>
+        <div class="badge"><span class="dot" style="background: rgba(106,169,255,0.95)"></span>기관 누적</div>
+      </div>
+      <div class="smallHelp">일별 순매수 수량을 날짜 순으로 누적합으로 표시합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">패턴 감지(감소 2일↑ → 증가 2일↑)</div>
+      <div class="smallHelp">
+        - “감소”: 오늘 수급 &lt; 전일 수급, “증가”: 오늘 수급 &gt; 전일 수급 (각각 2일 연속 이상)<br/>
+        - 표의 날짜는 “증가 구간이 시작된 날”입니다.
+      </div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table class="table" id="tblPatterns" style="min-width:520px">
+          <thead>
+            <tr>
+              <th>외국인 전환일</th>
+              <th>기관 전환일</th>
+              <th>일치</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">기관/외국인 수급 전략 시뮬레이션 결과</div>
+      <div class="smallHelp">
+        - “일치” 신호일 다음 거래일 <b>시가</b>에 매수했다고 가정합니다.<br/>
+        - 이후 매 거래일 <b>종가</b> 기준으로 수익률을 계산하여, 현재(마지막 데이터)까지 <b>최대 수익률</b>과 <b>최대 손실률</b>을 표시합니다.
+      </div>
+      <div class="tableWrap" style="margin-top:10px">
+        <table class="table" id="tblSim" style="min-width:720px">
+          <thead>
+            <tr>
+              <th>신호일(일치)</th>
+              <th>매수일</th>
+              <th class="right">매수가(시가)</th>
+              <th class="right">최대 수익률(%)</th>
+              <th>일자</th>
+              <th class="right">최대 손실률(%)</th>
+              <th>일자</th>
+              <th class="right">현재 수익률(%)</th>
+              <th>기준일</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="simNote" class="note"></div>
+    </section>
+
+    <section class="grid">
+      <div class="card" id="cardForeign">
+        <div class="cardTitle">외국인 일별</div>
+        <div class="tableWrap">
+          <table class="table" id="tblForeign">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th class="right">수량</th>
+                <th class="right">종가</th>
+                <th class="right">전일대비</th>
+                <th class="right">외인비중(%)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" id="cardInstitution">
+        <div class="cardTitle">기관 일별</div>
+        <div class="tableWrap">
+          <table class="table" id="tblInstitution">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th class="right">수량</th>
+                <th class="right">종가</th>
+                <th class="right">전일대비</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

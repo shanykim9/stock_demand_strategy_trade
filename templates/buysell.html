@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>매수/손절/익절 자동화 (buysell)</title>
+  <link rel="stylesheet" href="/static/styles.css?v={{ asset_ver }}" />
+  <link rel="stylesheet" href="/static/buysell.css?v={{ asset_ver }}" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div>
+        <div class="title">매수/손절/익절 자동화</div>
+        <div class="subtitle">90일 OHLCV 차트 + 매수가/손절/익절 입력 + 자동 주문(기본 모의)</div>
+      </div>
+      <div class="hint">
+        서버: <span class="mono" id="serverBase"></span>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="controls">
+        <label class="field">
+          <span class="label">종목코드 / 종목명</span>
+          <input id="ticker" class="input mono" placeholder="예: 005930 또는 현대차" />
+        </label>
+        <label class="field">
+          <span class="label">거래소</span>
+          <select id="exchange" class="input mono">
+            <option value="KRX">KRX</option>
+            <option value="NXT">NXT</option>
+          </select>
+        </label>
+        <div class="field">
+          <span class="label">기간</span>
+          <div class="pill mono">90일</div>
+        </div>
+        <button id="btnLoad" class="btn">차트 조회</button>
+        <div class="spacer"></div>
+        <div class="pill mono">
+          모드: <span id="modeBadge"></span> · 장 시작: <span class="mono">{{ open_hhmm }}</span>
+        </div>
+      </div>
+      <div id="status" class="status"></div>
+      <div class="smallHelp">
+        기본은 <b>모의(DRY_RUN)</b>이며, 실거래는 <code>.env</code> 설정 후에만 가능하게 만들어두었습니다.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">호가(최우선)</div>
+      <div class="legend">
+        <div class="badge">매수1호가(BID): <span class="mono" id="bestBid">-</span></div>
+        <div class="badge">매도1호가(ASK): <span class="mono" id="bestAsk">-</span></div>
+      </div>
+      <div class="smallHelp">호가는 <code>ka10004</code> 기반으로 표시합니다.</div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">주식차트(OHLCV · 90일)</div>
+      <div class="chart chartTall">
+        <canvas id="candleCanvas"></canvas>
+      </div>
+      <div class="legend">
+        <div class="badge"><span class="dot" style="background: rgba(239,68,68,0.95)"></span>상승(양봉 · 적색)</div>
+        <div class="badge"><span class="dot" style="background: rgba(37,99,235,0.95)"></span>하락(음봉 · 청색)</div>
+        <div class="badge"><span class="dot" style="background: rgba(100,116,139,0.55)"></span>거래량(하단)</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">종가기준 그래프</div>
+      <div class="chart">
+        <canvas id="closeCanvas"></canvas>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">매수/손절/익절 설정</div>
+      <div class="grid2">
+        <label class="field">
+          <span class="label">수량(qty)</span>
+          <input id="qty" class="input mono" type="number" min="1" step="1" value="1" />
+        </label>
+        <label class="field">
+          <span class="label">거래소(주문)</span>
+          <select id="planExchange" class="input mono">
+            <option value="AUTO">AUTO(자동)</option>
+            <option value="KRX">KRX</option>
+            <option value="NXT">NXT</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">매수가</span>
+          <input id="buyPrice" class="input mono" type="number" min="1" step="1" />
+        </label>
+        <label class="field">
+          <span class="label">손절가</span>
+          <input id="stopLoss" class="input mono" type="number" min="0" step="1" />
+        </label>
+        <label class="field">
+          <span class="label">익절가</span>
+          <input id="takeProfit" class="input mono" type="number" min="0" step="1" />
+        </label>
+      </div>
+      <div class="controls" style="margin-top:10px">
+        <button id="btnSavePlan" class="btn">전략 저장</button>
+        <button id="btnStart" class="btn btnGood">자동매매 시작</button>
+        <button id="btnStop" class="btn btnBad">중지</button>
+        <button id="btnLogs" class="btn" type="button">로그 보기</button>
+        <div class="spacer"></div>
+        <div class="pill mono">현재가: <span id="lastPrice">-</span></div>
+        <button id="btnPos" class="pill mono" type="button">포지션: <span id="posQty">0</span></button>
+        <div class="pill mono">거래소: <span id="planExBadge">-</span></div>
+        <div class="pill mono">ARM: <span id="armBadge">-</span></div>
+        <div class="pill mono">RUNNER: <span id="runnerBadge">-</span></div>
+        <div class="pill mono">최근매수 주문가: <span id="lastBuyOrdPx">-</span></div>
+        <div class="pill mono">최근매수 체결가: <span id="lastBuyFillPx">-</span></div>
+        <div class="pill mono">최근매수 주문번호: <span id="lastBuyOrdNo">-</span></div>
+      </div>
+      <div id="botStatus" class="status"></div>
+      <div id="runnerHelp" class="smallHelp" style="display:none"></div>
+      <div id="posBox" class="kv mono" style="display:none; margin-top:10px; white-space:pre; overflow:auto"></div>
+      <div id="logBox" class="kv mono" style="display:none; margin-top:10px; white-space:pre; overflow:auto; max-height:260px"></div>
+
+      <div class="controls" style="margin-top:10px">
+        <div class="badge mono">
+          종목 필터:
+          <select id="symFilter" class="input mono" style="padding:6px 8px; height:32px; margin-left:6px">
+            <option value="ALL">전체</option>
+          </select>
+        </div>
+        <div class="spacer"></div>
+        <div class="smallHelp" style="margin:0">
+          엔트리/미체결/체결을 선택한 종목 기준으로 표시합니다.
+        </div>
+      </div>
+
+      <div class="cardTitle" style="margin-top:14px">엔트리 내역(분할매수 · TP/SL 고정)</div>
+      <div class="smallHelp">
+        - “전략 저장” 1번 = 엔트리 1건(매수가/수량/익절/손절)으로 저장됩니다.<br/>
+        - 체결되면 해당 엔트리는 입력했던 TP/SL로만 청산됩니다(여러 건을 서로 다른 TP/SL로 운용 가능).
+      </div>
+      <div class="tableWrap">
+        <table class="table" id="tblEntries">
+          <thead>
+            <tr>
+              <th>생성</th>
+              <th>종목</th>
+              <th>선택EX</th>
+              <th>실행EX</th>
+              <th class="right">매수가</th>
+              <th class="right">수량</th>
+              <th class="right">익절</th>
+              <th class="right">손절</th>
+              <th>상태</th>
+              <th>매수주문</th>
+              <th class="right">매수체결</th>
+              <th>매도주문</th>
+              <th>종결</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="cardTitle" style="margin-top:14px">미체결 내역(최근)</div>
+      <div class="tableWrap">
+        <table class="table" id="tblUnfilled">
+          <thead>
+            <tr>
+              <th>시간/일자</th>
+              <th>주문번호</th>
+              <th>구분</th>
+              <th class="right">주문가</th>
+              <th class="right">주문수량</th>
+              <th class="right">미체결</th>
+              <th class="right">취소</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="cardTitle" style="margin-top:14px">체결 내역(최근)</div>
+      <div class="tableWrap">
+        <table class="table" id="tblFills">
+          <thead>
+            <tr>
+              <th>시간/일자</th>
+              <th>주문번호</th>
+              <th>구분</th>
+              <th class="right">체결가</th>
+              <th class="right">체결수량</th>
+              <th class="right">미체결</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="smallHelp">
+        - “장 시작(기본 {{ open_hhmm }})” 이후 <b>매수가</b>로 매수 지정 주문을 제출합니다.<br/>
+        - 매수 후 현재가가 <b>익절가 이상</b> 또는 <b>손절가 이하</b>가 되면 매도합니다.<br/>
+        - <b>주의</b>: 실거래는 <code>KIWOOM_DRY_RUN=0</code>과 <code>KIWOOM_ENABLE_LIVE_TRADING=YES</code>를 모두 설정해야만 동작합니다.
+      </div>
+    </section>
+  </div>
+
+  <script id="buySellConfig" type="application/json">{{ {"dryRun": dry_run}|tojson }}</script>
+  <script>
+    window.__BUYSELL_CONFIG__ = JSON.parse(document.getElementById("buySellConfig")?.textContent || "{}");
+  </script>
+  <script src="/static/buysell.js?v={{ asset_ver }}"></script>
+</body>
+</html>
+

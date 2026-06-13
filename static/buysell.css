@@ -1,0 +1,39 @@
+:root{
+  --good2:#35d07f;
+  --bad2:#ff5c77;
+}
+
+.pill{
+  height:38px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 12px;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,0.12);
+  background: rgba(15,23,42,0.03);
+  color: rgba(15,23,42,0.86);
+}
+
+.chartTall{height:520px}
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap:10px;
+}
+@media (max-width: 980px){
+  .grid2{grid-template-columns: 1fr 1fr}
+}
+
+.btnGood{
+  border-color: rgba(53,208,127,0.55);
+  background: rgba(53,208,127,0.10);
+}
+.btnGood:hover{background: rgba(53,208,127,0.20)}
+
+.btnBad{
+  border-color: rgba(255,92,119,0.55);
+  background: rgba(255,92,119,0.10);
+}
+.btnBad:hover{background: rgba(255,92,119,0.20)}
+
